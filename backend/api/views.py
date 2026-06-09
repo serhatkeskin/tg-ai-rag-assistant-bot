@@ -297,8 +297,13 @@ def query(request):
 
     token = getattr(request, "demo_token", None)
     demo_token_value = str(token.token) if token else None
+    chat_history = serializer.validated_data.get("chat_history", [])
     try:
-        result = run_query(serializer.validated_data["query"], demo_token=demo_token_value)
+        result = run_query(
+            serializer.validated_data["query"],
+            demo_token=demo_token_value,
+            chat_history=chat_history,
+        )
     except Exception as exc:
         return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

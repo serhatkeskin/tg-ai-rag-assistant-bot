@@ -59,11 +59,11 @@ class APIClient:
             ) as resp:
                 return {"status": resp.status, "data": await resp.json() if resp.status in (200, 201) else None}
 
-    async def query(self, question: str) -> dict:
+    async def query(self, question: str, chat_history: list[dict] | None = None) -> dict:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"{self.base_url}/api/query/",
-                json={"question": question},
+                json={"question": question, "chat_history": chat_history or []},
                 headers=self._auth_headers(),
             ) as resp:
                 return {"status": resp.status, "data": await resp.json() if resp.status == 200 else None}

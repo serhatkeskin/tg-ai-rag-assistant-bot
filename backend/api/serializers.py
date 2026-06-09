@@ -20,9 +20,15 @@ class DocumentSerializer(serializers.ModelSerializer):
         )
 
 
+class ChatMessageSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=["user", "assistant"])
+    content = serializers.CharField(max_length=4000)
+
+
 class QuerySerializer(serializers.Serializer):
     question = serializers.CharField(min_length=1, max_length=2000, required=False)
     query = serializers.CharField(min_length=1, max_length=2000, required=False)
+    chat_history = ChatMessageSerializer(many=True, required=False, default=list)
 
     def validate(self, data):
         question = data.get("question") or data.get("query")

@@ -23,6 +23,18 @@ class Storage:
                     set_at TEXT NOT NULL DEFAULT (datetime('now'))
                 )
             """)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS chat_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_id INTEGER NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+            """)
+            await db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_chat_id ON chat_history (chat_id)"
+            )
             await db.commit()
 
     async def save_session(self, chat_id: int, token_uuid: str) -> None:
@@ -58,3 +70,31 @@ class Storage:
             ) as cursor:
                 row = await cursor.fetchone()
                 return row[0] if row else None
+
+    async def add_message(self, chat_id: int, role: str, content: str, max_messages: int = 10) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "INSERT INTO chat_history (chat_id, role, content) VALUES (?, ?, ?)",
+                (chat_id, role, content),
+            )
+            await db.execute(
+                """DELETE FROM chat_history WHERE chat_id = ? AND id NOT IN (
+                    SELECT id FROM chat_history WHERE chat_id = ? ORDER BY id DESC LIMIT ?
+                )""",
+                (chat_id, chat_id, max_messages),
+            )
+            await db.commit()
+
+    async def get_history(self, chat_id: int, limit: int = 10) -> list[dict]:
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute(
+                "SELECT role, content FROM chat_history WHERE chat_id = ? ORDER BY id DESC LIMIT ?",
+                (chat_id, limit),
+            ) as cursor:
+                rows = await cursor.fetchall()
+        return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
+
+    async def clear_history(self, chat_id: int) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("DELETE FROM chat_history WHERE chat_id = ?", (chat_id,))
+            await db.commit()

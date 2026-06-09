@@ -24,11 +24,12 @@ HELP_TEXT = (
     "*Aven AI Assistant — Commands*\n\n"
     "/auth `<token>` — Authenticate with your demo token\n"
     "/ask `<question>` — Ask the RAG assistant\n"
+    "/clear — Clear conversation history\n"
     "/docs — List your documents\n"
     "/delete `<id>` — Delete a document\n"
     "/status — Show current token info\n"
     "/help — Show this message\n\n"
-    "You can also send a PDF, TXT, or MD file directly to upload it."
+    "You can also send a message directly to ask a question, or send a PDF/TXT file to upload it."
 )
 
 
@@ -84,6 +85,7 @@ async def cmd_auth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if result["status"] == 200:
         storage = get_storage()
         await storage.save_session(chat_id, token)
+        await storage.clear_history(chat_id)
         info = result["data"]
         await update.message.reply_text(
             f"Authenticated as *{info['label']}*. Token expires: {info.get('expires_at', 'N/A')}",
@@ -119,17 +121,21 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await update.message.reply_text("Token is no longer valid. Use `/auth <token>` to re-authenticate.", parse_mode="Markdown")
 
 
-async def _do_ask(update: Update, question: str, token: str) -> None:
+async def _do_ask(update: Update, question: str, token: str, chat_id: int) -> None:
     await update.message.reply_text("Searching the knowledge base...")
+    storage = get_storage()
+    history = await storage.get_history(chat_id)
     client = APIClient(API_BASE_URL, token=token)
     try:
-        result = await client.query(question)
+        result = await client.query(question, chat_history=history)
     except Exception as exc:
         await update.message.reply_text(f"Could not reach the API: {exc}")
         return
     if result["status"] == 200:
         answer = result["data"].get("answer", "No answer returned.")
         await update.message.reply_text(answer)
+        await storage.add_message(chat_id, "user", question)
+        await storage.add_message(chat_id, "assistant", answer)
     elif result["status"] == 401:
         await update.message.reply_text("Token expired. Use `/auth <token>` to re-authenticate.", parse_mode="Markdown")
     else:
@@ -149,7 +155,14 @@ async def cmd_ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Usage: `/ask <your question>`", parse_mode="Markdown")
         return
 
-    await _do_ask(update, question, token)
+    await _do_ask(update, question, token, chat_id)
+
+
+async def cmd_clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.effective_chat.id
+    storage = get_storage()
+    await storage.clear_history(chat_id)
+    await update.message.reply_text("Conversation history cleared.")
 
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -164,7 +177,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if not question:
         return
 
-    await _do_ask(update, question, token)
+    await _do_ask(update, question, token, chat_id)
 
 
 async def cmd_docs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
