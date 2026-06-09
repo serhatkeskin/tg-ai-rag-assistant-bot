@@ -39,6 +39,7 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       API_BASE_URL: http://backend:8000
+      ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-0}
     depends_on:
       - backend
     volumes:
