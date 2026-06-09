@@ -18,6 +18,8 @@ export interface TokenInfo {
   expires_at: string;
   is_active: boolean;
   created_at: string;
+  usage_limit: number | null;
+  usage_count: number;
 }
 
 export async function listTokens(): Promise<TokenInfo[]> {
@@ -27,11 +29,11 @@ export async function listTokens(): Promise<TokenInfo[]> {
   return res.json();
 }
 
-export async function createToken(label: string, days: number): Promise<TokenInfo> {
+export async function createToken(label: string, days: number, usageLimit?: number): Promise<TokenInfo> {
   const res = await fetch(`${API_BASE}/admin/tokens/`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...adminHeaders() },
-    body: JSON.stringify({ label, days }),
+    body: JSON.stringify({ label, days, usage_limit: usageLimit ?? null }),
   });
   if (res.status === 403) throw new Error("forbidden");
   if (!res.ok) {

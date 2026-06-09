@@ -39,5 +39,8 @@ class DemoTokenMiddleware:
         if tok.expires_at < datetime.now(tz=timezone.utc):
             return JsonResponse({"error": "Token expired"}, status=401)
 
+        if tok.usage_limit is not None and tok.usage_count >= tok.usage_limit:
+            return JsonResponse({"error": "Usage limit reached"}, status=429)
+
         request.demo_token = tok
         return self.get_response(request)

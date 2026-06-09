@@ -55,6 +55,8 @@ def admin_tokens(request):
                 "expires_at": t.expires_at.isoformat(),
                 "is_active": t.is_active,
                 "created_at": t.created_at.isoformat(),
+                "usage_limit": t.usage_limit,
+                "usage_count": t.usage_count,
             }
             for t in tokens
         ]
@@ -62,6 +64,7 @@ def admin_tokens(request):
 
     label = request.data.get("label", "").strip()
     days = request.data.get("days")
+    usage_limit = request.data.get("usage_limit")
     if not label:
         return Response({"error": "label required"}, status=400)
     try:
@@ -70,10 +73,18 @@ def admin_tokens(request):
             raise ValueError
     except (TypeError, ValueError):
         return Response({"error": "days must be a positive integer"}, status=400)
+    if usage_limit is not None:
+        try:
+            usage_limit = int(usage_limit)
+            if usage_limit < 1:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response({"error": "usage_limit must be a positive integer"}, status=400)
 
     tok = DemoToken.objects.create(
         label=label,
         expires_at=timezone.now() + timedelta(days=days),
+        usage_limit=usage_limit,
     )
     return Response(
         {
@@ -83,6 +94,8 @@ def admin_tokens(request):
             "expires_at": tok.expires_at.isoformat(),
             "is_active": tok.is_active,
             "created_at": tok.created_at.isoformat(),
+            "usage_limit": tok.usage_limit,
+            "usage_count": tok.usage_count,
         },
         status=201,
     )
@@ -294,6 +307,7 @@ def query(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     from src.graph import run_query
+    from django.db.models import F
 
     token = getattr(request, "demo_token", None)
     demo_token_value = str(token.token) if token else None
@@ -306,6 +320,9 @@ def query(request):
         )
     except Exception as exc:
         return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    if token and token.usage_limit is not None:
+        DemoToken.objects.filter(pk=token.pk).update(usage_count=F("usage_count") + 1)
 
     return Response({
         "query": serializer.validated_data["query"],

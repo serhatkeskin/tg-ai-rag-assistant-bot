@@ -11,7 +11,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [newLabel, setNewLabel] = useState("");
-  const [newDays, setNewDays] = useState("30");
+  const [newDays, setNewDays] = useState("1");
+  const [newUsageLimit, setNewUsageLimit] = useState("20");
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
   const [deactivating, setDeactivating] = useState<number | null>(null);
@@ -53,9 +54,10 @@ export default function AdminPage() {
     if (!newLabel.trim()) return;
     setCreating(true); setError("");
     try {
-      const tok = await createToken(newLabel.trim(), parseInt(newDays));
+      const limit = newUsageLimit.trim() ? parseInt(newUsageLimit) : undefined;
+      const tok = await createToken(newLabel.trim(), parseInt(newDays), limit);
       setTokens((prev) => [tok, ...prev]);
-      setNewLabel(""); setNewDays("30");
+      setNewLabel(""); setNewDays("1"); setNewUsageLimit("20");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "error");
     } finally { setCreating(false); }
@@ -162,6 +164,16 @@ export default function AdminPage() {
                 />
                 <span className="days-label">days</span>
               </div>
+              <div className="days-wrapper">
+                <input
+                  type="number"
+                  value={newUsageLimit}
+                  onChange={(e) => setNewUsageLimit(e.target.value)}
+                  className="input-field input-days"
+                  min="1" placeholder="∞"
+                />
+                <span className="days-label">queries</span>
+              </div>
               <button type="submit" className="btn-primary" disabled={creating}>
                 {creating ? "…" : "Create"}
               </button>
@@ -211,6 +223,20 @@ export default function AdminPage() {
                       {copied === tok.id ? "Copied!" : "Copy"}
                     </button>
                   </div>
+
+                  {tok.usage_limit !== null && (
+                    <div className="usage-bar-row">
+                      <div className="usage-bar-bg">
+                        <div
+                          className="usage-bar-fill"
+                          style={{ width: `${Math.min(100, (tok.usage_count / tok.usage_limit) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="usage-bar-label">
+                        {tok.usage_count} / {tok.usage_limit} queries
+                      </span>
+                    </div>
+                  )}
 
                   {tok.is_active && (
                     <div className="token-card-actions">

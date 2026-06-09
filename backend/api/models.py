@@ -26,6 +26,8 @@ class DemoToken(models.Model):
     expires_at = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    usage_limit = models.IntegerField(null=True, blank=True)  # None = unlimited
+    usage_count = models.IntegerField(default=0)
 
     class Meta:
         ordering = ["-created_at"]
