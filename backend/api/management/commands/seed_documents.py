@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         force = options["force"]
-        root = Path(__file__).parents[5]
+        root = Path(__file__).parents[4]
 
         from api.views import _ingest_document
 
