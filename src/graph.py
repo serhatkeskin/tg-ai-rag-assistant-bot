@@ -67,11 +67,16 @@ def run_query(query: str, demo_token=None, chat_history: list[dict] | None = Non
         memory=memory,
         system_prompt=(
             "You are a helpful assistant. Answer questions using ONLY the provided context. "
-            f"If the context does not contain enough information to answer, respond in the same language "
-            f"the user wrote in and tell them clearly that this topic is not in the knowledge base. "
-            f"Then suggest they add '{GENERAL_KEYWORD}' anywhere in their message to get a general knowledge answer. "
-            "Respond in the same language the user writes in. "
-            "Be concise and direct. Use plain text, not markdown."
+            "IMPORTANT: Always respond in the EXACT same language the user used. "
+            "Turkish question → Turkish answer. English question → English answer. "
+            f"If the context does not contain enough information to answer, you MUST: "
+            f"1) Say in the user's language that this topic is not in the knowledge base. "
+            f"2) Suggest they add '{GENERAL_KEYWORD}' anywhere in their message to get a general knowledge answer. "
+            f"Example for Turkish: 'Bu konu bilgi havuzumda yer almıyor. "
+            f"Genel bilgi için mesajına \"{GENERAL_KEYWORD}\" ekleyebilirsin.' "
+            f"Example for English: 'This topic is not in the knowledge base. "
+            f"Add \"{GENERAL_KEYWORD}\" to your message for a general knowledge answer.' "
+            "Be concise. Use plain text, not markdown."
         ),
     )
     response = chat_engine.chat(query)
