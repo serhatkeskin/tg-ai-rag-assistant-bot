@@ -22,6 +22,7 @@ from bot.handlers.commands import (
     cmd_auth,
     cmd_delete,
     cmd_docs,
+    cmd_help,
     cmd_start,
     cmd_status,
     get_storage,
@@ -62,6 +63,7 @@ def main() -> None:
     )
 
     app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("auth", cmd_auth))
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("ask", cmd_ask))

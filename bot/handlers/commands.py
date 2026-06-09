@@ -20,6 +20,22 @@ def get_storage() -> Storage:
     return _storage
 
 
+HELP_TEXT = (
+    "*Aven AI Assistant — Commands*\n\n"
+    "/auth `<token>` — Authenticate with your demo token\n"
+    "/ask `<question>` — Ask the RAG assistant\n"
+    "/docs — List your documents\n"
+    "/delete `<id>` — Delete a document\n"
+    "/status — Show current token info\n"
+    "/help — Show this message\n\n"
+    "You can also send a PDF, TXT, or MD file directly to upload it."
+)
+
+
+async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(HELP_TEXT, parse_mode="Markdown")
+
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id
     storage = get_storage()
