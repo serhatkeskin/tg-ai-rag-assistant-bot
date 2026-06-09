@@ -42,7 +42,11 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     content_type = "application/pdf" if ext == "pdf" else "text/plain"
     client = APIClient(API_BASE_URL, token=token)
-    result = await client.upload_document(filename, bytes(file_bytes), content_type=content_type)
+    try:
+        result = await client.upload_document(filename, bytes(file_bytes), content_type=content_type)
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
 
     if result["status"] in (200, 201):
         data = result["data"]

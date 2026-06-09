@@ -26,6 +26,7 @@ from bot.handlers.commands import (
     cmd_start,
     cmd_status,
     get_storage,
+    handle_text,
 )
 from bot.handlers.files import handle_document
 from bot.health import start_health_server
@@ -74,6 +75,7 @@ def main() -> None:
     app.add_handler(CommandHandler("admin_revoke", cmd_admin_revoke))
     app.add_handler(build_admin_conversation())
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
     logger.info("Bot polling started")
     app.run_polling()

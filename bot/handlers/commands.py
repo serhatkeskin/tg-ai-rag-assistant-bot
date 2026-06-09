@@ -42,7 +42,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     token = await storage.get_token(chat_id)
     if token:
         client = APIClient(API_BASE_URL, token=token)
-        result = await client.me()
+        try:
+            result = await client.me()
+        except Exception:
+            result = {"status": 0}
         if result["status"] == 200:
             info = result["data"]
             await update.message.reply_text(
@@ -72,7 +75,11 @@ async def cmd_auth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     token = args[0].strip()
     client = APIClient(API_BASE_URL, token=token)
-    result = await client.me()
+    try:
+        result = await client.me()
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
 
     if result["status"] == 200:
         storage = get_storage()
@@ -97,7 +104,11 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     client = APIClient(API_BASE_URL, token=token)
-    result = await client.me()
+    try:
+        result = await client.me()
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
     if result["status"] == 200:
         info = result["data"]
         await update.message.reply_text(
@@ -106,6 +117,23 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         )
     else:
         await update.message.reply_text("Token is no longer valid. Use `/auth <token>` to re-authenticate.", parse_mode="Markdown")
+
+
+async def _do_ask(update: Update, question: str, token: str) -> None:
+    await update.message.reply_text("Searching the knowledge base...")
+    client = APIClient(API_BASE_URL, token=token)
+    try:
+        result = await client.query(question)
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
+    if result["status"] == 200:
+        answer = result["data"].get("answer", "No answer returned.")
+        await update.message.reply_text(answer)
+    elif result["status"] == 401:
+        await update.message.reply_text("Token expired. Use `/auth <token>` to re-authenticate.", parse_mode="Markdown")
+    else:
+        await update.message.reply_text("Query failed. Try again later.")
 
 
 async def cmd_ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -121,16 +149,22 @@ async def cmd_ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Usage: `/ask <your question>`", parse_mode="Markdown")
         return
 
-    await update.message.reply_text("Thinking...")
-    client = APIClient(API_BASE_URL, token=token)
-    result = await client.query(question)
-    if result["status"] == 200:
-        answer = result["data"].get("answer", "No answer returned.")
-        await update.message.reply_text(answer)
-    elif result["status"] == 401:
-        await update.message.reply_text("Token expired. Use `/auth <token>` to re-authenticate.", parse_mode="Markdown")
-    else:
-        await update.message.reply_text("Query failed. Try again later.")
+    await _do_ask(update, question, token)
+
+
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.effective_chat.id
+    storage = get_storage()
+    token = await storage.get_token(chat_id)
+    if not token:
+        await update.message.reply_text("Not authenticated. Use `/auth <token>`.", parse_mode="Markdown")
+        return
+
+    question = (update.message.text or "").strip()
+    if not question:
+        return
+
+    await _do_ask(update, question, token)
 
 
 async def cmd_docs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -142,7 +176,11 @@ async def cmd_docs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     client = APIClient(API_BASE_URL, token=token)
-    result = await client.list_documents()
+    try:
+        result = await client.list_documents()
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
     if result["status"] != 200:
         await update.message.reply_text("Failed to fetch documents.")
         return
@@ -176,7 +214,11 @@ async def cmd_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     doc_id = int(args[0])
     client = APIClient(API_BASE_URL, token=token)
-    result = await client.delete_document(doc_id)
+    try:
+        result = await client.delete_document(doc_id)
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
     if result["status"] == 200:
         await update.message.reply_text(f"Document {doc_id} deleted.")
     elif result["status"] == 403:

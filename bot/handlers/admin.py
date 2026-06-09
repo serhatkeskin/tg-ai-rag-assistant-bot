@@ -55,7 +55,11 @@ async def cmd_admin_tokens(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return
 
     client = APIClient(API_BASE_URL, admin_key=admin_key)
-    result = await client.admin_list_tokens()
+    try:
+        result = await client.admin_list_tokens()
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
     if result["status"] != 200:
         await update.message.reply_text("Failed to list tokens.")
         return
@@ -91,7 +95,11 @@ async def cmd_admin_revoke(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     token_id = int(args[0])
     client = APIClient(API_BASE_URL, admin_key=admin_key)
-    result = await client.admin_revoke_token(token_id)
+    try:
+        result = await client.admin_revoke_token(token_id)
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return
     if result["status"] == 200:
         await update.message.reply_text(f"Token {token_id} revoked.")
     elif result["status"] == 404:
@@ -140,7 +148,11 @@ async def admin_create_token_days(update: Update, context: ContextTypes.DEFAULT_
     storage = get_storage()
     admin_key = await storage.get_admin_key(chat_id)
     client = APIClient(API_BASE_URL, admin_key=admin_key)
-    result = await client.admin_create_token(label, days)
+    try:
+        result = await client.admin_create_token(label, days)
+    except Exception as exc:
+        await update.message.reply_text(f"Could not reach the API: {exc}")
+        return ConversationHandler.END
 
     if result["status"] == 201:
         tok = result["data"]
