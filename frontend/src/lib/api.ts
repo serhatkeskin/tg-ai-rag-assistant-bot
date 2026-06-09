@@ -141,11 +141,19 @@ export async function getChunks(): Promise<ChunksResponse> {
   return res.json();
 }
 
-export async function runQuery(query: string): Promise<QueryResult> {
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function runQuery(
+  query: string,
+  chatHistory: ChatMessage[] = [],
+): Promise<QueryResult> {
   const res = await fetch(`${API_BASE}/query/`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, chat_history: chatHistory }),
   });
   if (res.status === 401) throw new Error("unauthorized");
   if (!res.ok) {

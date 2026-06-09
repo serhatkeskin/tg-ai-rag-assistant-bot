@@ -1,4 +1,4 @@
-from llama_index.core.chat_engine import CondensePlusContextChatEngine
+from llama_index.core.chat_engine import CondensePlusContextChatEngine, SimpleChatEngine
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.vector_stores import (
@@ -13,6 +13,7 @@ from src.config import GOOGLE_API_KEY, LLM_MODEL
 from src.indexer import get_retriever, setup_llama_settings
 
 DEFAULT_TAG = "__default__"
+GENERAL_KEYWORD = "!general"
 
 
 def build_token_filters(demo_token=None) -> MetadataFilters:
@@ -28,32 +29,51 @@ def build_token_filters(demo_token=None) -> MetadataFilters:
     )
 
 
-def run_query(query: str, demo_token=None, chat_history: list[dict] | None = None) -> dict:
-    setup_llama_settings()
-    retriever = get_retriever(filters=build_token_filters(demo_token))
-    llm = GoogleGenAI(model=LLM_MODEL, api_key=GOOGLE_API_KEY)
-
+def _build_memory(chat_history: list[dict] | None) -> ChatMemoryBuffer:
     messages = []
     for msg in (chat_history or []):
         role = MessageRole.USER if msg["role"] == "user" else MessageRole.ASSISTANT
         messages.append(ChatMessage(role=role, content=msg["content"]))
+    return ChatMemoryBuffer.from_defaults(chat_history=messages, token_limit=3000)
 
-    memory = ChatMemoryBuffer.from_defaults(
-        chat_history=messages,
-        token_limit=3000,
-    )
 
+def run_query(query: str, demo_token=None, chat_history: list[dict] | None = None) -> dict:
+    setup_llama_settings()
+    llm = GoogleGenAI(model=LLM_MODEL, api_key=GOOGLE_API_KEY)
+    memory = _build_memory(chat_history)
+
+    # General knowledge mode — keyword anywhere in query
+    if GENERAL_KEYWORD in query.lower():
+        actual_query = query.lower().replace(GENERAL_KEYWORD, "").strip()
+        if not actual_query:
+            return {"answer": f"Please provide a question along with {GENERAL_KEYWORD}.", "sources": []}
+        chat_engine = SimpleChatEngine.from_defaults(
+            llm=llm,
+            memory=memory,
+            system_prompt=(
+                "You are a helpful AI assistant with broad general knowledge. "
+                "Respond in the same language the user writes in. "
+                "Be concise and direct."
+            ),
+        )
+        response = chat_engine.chat(actual_query)
+        return {"answer": str(response), "sources": []}
+
+    # RAG mode
+    retriever = get_retriever(filters=build_token_filters(demo_token))
     chat_engine = CondensePlusContextChatEngine.from_defaults(
         retriever=retriever,
         llm=llm,
         memory=memory,
         system_prompt=(
             "You are a helpful assistant. Answer questions using ONLY the provided context. "
-            "If the context does not contain enough information, say so clearly. "
+            f"If the context does not contain enough information to answer, respond in the same language "
+            f"the user wrote in and tell them clearly that this topic is not in the knowledge base. "
+            f"Then suggest they add '{GENERAL_KEYWORD}' anywhere in their message to get a general knowledge answer. "
+            "Respond in the same language the user writes in. "
             "Be concise and direct. Use plain text, not markdown."
         ),
     )
-
     response = chat_engine.chat(query)
 
     sources = []
@@ -63,5 +83,4 @@ def run_query(query: str, demo_token=None, chat_history: list[dict] | None = Non
             "score": round(float(node.score), 4) if node.score is not None else None,
             "metadata": node.metadata or {},
         })
-
     return {"answer": str(response), "sources": sources}

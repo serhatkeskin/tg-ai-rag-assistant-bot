@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { runQuery, type QueryResult, type Source } from "@/lib/api";
+import { useState, useRef, useEffect } from "react";
+import { runQuery, type Source, type ChatMessage } from "@/lib/api";
 
-type Step = "idle" | "retrieve" | "generate" | "done";
+type Step = "idle" | "retrieve" | "generate";
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  sources?: Source[];
+};
+
+const GENERAL_KEYWORD = "!general";
 
 const EXAMPLES = [
   "What are the pricing tiers and what does each include?",
@@ -23,11 +31,7 @@ function scoreClass(score: number | null): string {
 function ScoreBar({ score }: { score: number | null }) {
   if (score === null) return null;
   const pct = Math.round(score * 100);
-  return (
-    <span className={`score-badge ${scoreClass(score)}`}>
-      {pct}% match
-    </span>
-  );
+  return <span className={`score-badge ${scoreClass(score)}`}>{pct}% match</span>;
 }
 
 function PipelineSteps({ step }: { step: Step }) {
@@ -35,23 +39,16 @@ function PipelineSteps({ step }: { step: Step }) {
     { id: "retrieve", label: "Searching pgvector" },
     { id: "generate", label: "Generating with Gemini" },
   ];
-
   return (
     <div className="pipeline">
       {steps.map((s, i) => {
+        const isActive = s.id === step;
         const isDone =
-          (s.id === "retrieve" && (step === "generate" || step === "done")) ||
-          (s.id === "generate" && step === "done");
-        const isActive =
-          (s.id === "retrieve" && step === "retrieve") ||
-          (s.id === "generate" && step === "generate");
-
+          (s.id === "retrieve" && step === "generate");
         return (
           <span key={s.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className={`p-step ${isActive ? "active" : ""} ${isDone ? "done" : ""}`}>
-              <span className="p-icon">
-                {isDone ? "✓" : isActive ? "●" : String(i + 1)}
-              </span>
+              <span className="p-icon">{isDone ? "✓" : isActive ? "●" : String(i + 1)}</span>
               {s.label}
             </span>
             {i < steps.length - 1 && <span className="p-arrow">→</span>}
@@ -67,7 +64,6 @@ function SourceCard({ source, index }: { source: Source; index: number }) {
   const docTitle = source.metadata?.title || "Document";
   const text = source.text;
   const preview = text.length > 280 ? text.slice(0, 280) + "…" : text;
-
   return (
     <div className="source-card">
       <div className="source-meta">
@@ -96,74 +92,161 @@ function SourceCard({ source, index }: { source: Source; index: number }) {
   );
 }
 
+function UserBubble({ content }: { content: string }) {
+  return (
+    <div className="chat-user-msg">
+      <span className="chat-role-label">You</span>
+      <p className="chat-user-text">{content}</p>
+    </div>
+  );
+}
+
+function AssistantBubble({ message }: { message: Message }) {
+  return (
+    <div className="chat-assistant-msg">
+      <span className="chat-role-label assistant-label">Assistant</span>
+      <div className="answer-box" style={{ marginTop: 8 }}>
+        <p className="answer-text">{message.content}</p>
+      </div>
+      {message.sources && message.sources.length > 0 && (
+        <>
+          <div className="sources-header" style={{ marginTop: 12 }}>
+            <div className="section-label" style={{ margin: 0 }}>Sources</div>
+            <span className="sources-count">
+              {message.sources.length} chunk{message.sources.length !== 1 ? "s" : ""} retrieved
+            </span>
+          </div>
+          {message.sources.map((src, i) => (
+            <SourceCard key={i} source={src} index={i} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function QueryPage() {
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<QueryResult | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const loading = step === "retrieve" || step === "generate";
+  const loading = step !== "idle";
+  const isGeneral = query.toLowerCase().includes(GENERAL_KEYWORD);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, step]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim() || loading) return;
     setError(null);
-    setResult(null);
+
+    const userMessage = query.trim();
+    const chatHistory: ChatMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    setQuery("");
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setStep("retrieve");
 
     const timer = setTimeout(() => setStep("generate"), 2000);
 
     try {
-      const res = await runQuery(query.trim());
+      const res = await runQuery(userMessage, chatHistory);
       clearTimeout(timer);
-      setStep("done");
-      setResult(res);
+      setStep("idle");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: res.answer, sources: res.sources },
+      ]);
     } catch (err) {
       clearTimeout(timer);
       setStep("idle");
+      setMessages((prev) => prev.slice(0, -1));
       setError(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
+  function clearConversation() {
+    setMessages([]);
+    setStep("idle");
+    setError(null);
+    setQuery("");
+  }
+
   function useExample(ex: string) {
     setQuery(ex);
-    setResult(null);
     setError(null);
-    setStep("idle");
     textareaRef.current?.focus();
   }
 
   return (
     <>
-      <div className="hero">
-        <h1>Ask anything about<br /><em>your documents</em></h1>
-        <div className="hero-sub">
-          <span>LlamaIndex</span>
-          <span className="hero-sep">·</span>
-          <span>LangGraph</span>
-          <span className="hero-sep">·</span>
-          <span>Gemini</span>
-          <span className="hero-sep">·</span>
-          <span>pgvector</span>
+      {messages.length === 0 && (
+        <div className="hero">
+          <h1>Ask anything about<br /><em>your documents</em></h1>
+          <div className="hero-sub">
+            <span>LlamaIndex</span>
+            <span className="hero-sep">·</span>
+            <span>Gemini</span>
+            <span className="hero-sep">·</span>
+            <span>pgvector</span>
+          </div>
         </div>
+      )}
+
+      {messages.length > 0 && (
+        <div className="chat-header">
+          <span className="section-label" style={{ margin: 0 }}>Conversation</span>
+          <button className="btn-clear-chat" onClick={clearConversation}>
+            New conversation
+          </button>
+        </div>
+      )}
+
+      <div className="chat-messages">
+        {messages.map((msg, i) =>
+          msg.role === "user" ? (
+            <UserBubble key={i} content={msg.content} />
+          ) : (
+            <AssistantBubble key={i} message={msg} />
+          )
+        )}
+        {loading && <PipelineSteps step={step} />}
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="query-card">
+      <form onSubmit={handleSubmit} style={{ marginTop: messages.length > 0 ? 8 : 0 }}>
+        <div className={`query-card${isGeneral ? " query-card-general" : ""}`}>
           <textarea
             ref={textareaRef}
             className="query-textarea"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit(e as unknown as React.FormEvent);
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                handleSubmit(e as unknown as React.FormEvent);
             }}
-            placeholder="Ask a question about your documents…"
+            placeholder={
+              messages.length === 0
+                ? "Ask a question about your documents… (or use !general for general knowledge)"
+                : "Follow-up question… (or use !general for general knowledge)"
+            }
             rows={3}
           />
           <div className="query-footer">
-            <span className="query-hint">⌘ + Enter to submit</span>
+            {isGeneral ? (
+              <span className="query-hint" style={{ color: "var(--accent)" }}>
+                ⚡ General knowledge mode
+              </span>
+            ) : (
+              <span className="query-hint">⌘ + Enter to submit</span>
+            )}
             <button type="submit" className="btn-ask" disabled={!query.trim() || loading}>
               {loading ? (
                 <>
@@ -178,7 +261,7 @@ export default function QueryPage() {
         </div>
       </form>
 
-      {!loading && step === "idle" && !result && (
+      {!loading && messages.length === 0 && !error && (
         <>
           <div className="examples-label">Try these examples</div>
           <div className="examples-list">
@@ -190,8 +273,6 @@ export default function QueryPage() {
           </div>
         </>
       )}
-
-      {loading && <PipelineSteps step={step} />}
 
       {error && (
         error === "unauthorized" ? (
@@ -209,29 +290,64 @@ export default function QueryPage() {
         )
       )}
 
-      {result && step === "done" && (
-        <div className="result-section">
-          <div className="section-label">Answer</div>
-          <div className="answer-box">
-            <p className="answer-text">{result.answer}</p>
-          </div>
-
-          {result.sources && result.sources.length > 0 && (
-            <>
-              <div className="sources-header">
-                <div className="section-label" style={{ margin: 0 }}>Sources</div>
-                <span className="sources-count">{result.sources.length} chunk{result.sources.length !== 1 ? "s" : ""} retrieved</span>
-              </div>
-              {result.sources.map((src, i) => (
-                <SourceCard key={i} source={src} index={i} />
-              ))}
-            </>
-          )}
-        </div>
-      )}
+      <div ref={bottomRef} />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .chat-messages { display: flex; flex-direction: column; gap: 8px; }
+
+        .chat-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .btn-clear-chat {
+          background: none;
+          border: 1px solid var(--border);
+          color: var(--text3);
+          padding: 4px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          cursor: pointer;
+          font-family: var(--mono);
+          transition: border-color 0.15s, color 0.15s;
+        }
+        .btn-clear-chat:hover { border-color: var(--accent); color: var(--accent); }
+
+        .chat-role-label {
+          font-size: 10px;
+          font-family: var(--mono);
+          color: var(--accent);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          display: block;
+          margin-bottom: 4px;
+        }
+        .assistant-label { color: var(--text3); }
+
+        .chat-user-msg {
+          padding: 12px 16px;
+          background: var(--bg2);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          border-left: 3px solid var(--accent);
+        }
+        .chat-user-text { margin: 0; color: var(--text1); font-size: 14px; line-height: 1.5; }
+
+        .chat-assistant-msg {
+          padding: 12px 16px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+        }
+        .chat-assistant-msg .answer-box { margin-top: 0; }
+
+        .query-card-general {
+          border-color: var(--accent) !important;
+          box-shadow: 0 0 0 1px var(--accent) !important;
+        }
       `}</style>
     </>
   );
