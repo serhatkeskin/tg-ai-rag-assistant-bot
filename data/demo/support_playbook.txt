@@ -1,0 +1,126 @@
+NovaTech Support & Incident Response Playbook
+
+PURPOSE
+
+This playbook defines how the NovaTech team handles customer-reported issues, production incidents, and escalations. Every engineer should be familiar with this document, especially the on-call engineer on duty.
+
+
+INCIDENT SEVERITY LEVELS
+
+P0 — Critical (Full Outage)
+Definition: The NovaTech platform is completely unavailable, or a core feature is broken for all customers. Data loss or data corruption is occurring.
+Examples: API returning 503 across all endpoints; database write failures; authentication system down; production data deleted accidentally.
+Target response time: Page on-call engineer immediately via PagerDuty. Incident commander acknowledges within 5 minutes. Customer-facing status page updated within 15 minutes. All-hands bridge opened within 20 minutes.
+Target resolution time: 4 hours. Escalate to CTO and VP Engineering if unresolved after 2 hours.
+
+P1 — High (Major Degradation)
+Definition: A significant feature is broken or severely degraded for most customers, but the platform is partially functional.
+Examples: Workflow automation failing for >50% of runs; data sync delayed by >2 hours; slow API responses affecting usability (>10 second p99 latency).
+Target response time: Page on-call engineer via PagerDuty. Acknowledge within 15 minutes. Status page updated within 30 minutes.
+Target resolution time: 8 hours.
+
+P2 — Medium (Partial Impact)
+Definition: A feature is broken for a subset of customers or is behaving unexpectedly without widespread service impact.
+Examples: A specific connector type failing for one customer; chart rendering broken in a specific browser; webhook deliveries delayed but not failed.
+Target response time: Create Jira ticket, assign to relevant team, acknowledge customer within 2 business hours.
+Target resolution time: 3 business days.
+
+P3 — Low (Minor / Cosmetic)
+Definition: Minor UI issues, documentation errors, or feature requests.
+Target response time: Acknowledge customer within 1 business day.
+Target resolution time: Next sprint or roadmap consideration.
+
+
+INCIDENT RESPONSE PROCEDURE
+
+When a P0 or P1 is identified:
+
+Step 1 — Declare the incident
+- Create an incident in PagerDuty ("Create Incident" button or via Slack /pd-incident command).
+- Assign severity (P0 or P1).
+- PagerDuty automatically pages the on-call engineer and creates a Slack channel #incident-YYYY-MM-DD-description.
+
+Step 2 — Assign roles
+- Incident Commander (IC): coordinates response, owns communication. Usually the on-call engineer.
+- Technical Lead: digs into the root cause and drives the fix.
+- Communications Lead: updates status page and drafts customer communications.
+For P0s, the IC should escalate to pull in a second engineer immediately.
+
+Step 3 — Communicate
+- Update status.novatech.io within the target time. Post to #engineering-incidents in Slack.
+- For P0: proactively email affected customers within 30 minutes (template in Notion: "P0 Outage Notification").
+- For P1: update status page; email only if customer has been waiting more than 2 hours.
+- Update status page every 30 minutes with progress until resolved.
+
+Step 4 — Diagnose
+Common first steps:
+- Check Datadog dashboards: api-overview, database-health, kafka-throughput.
+- Check recent deployments: `argocd app list` or the ArgoCD dashboard. If a deploy happened in the last 30 minutes, roll back first and ask questions later.
+- Query CloudWatch logs for 5xx spikes: Saved queries are in the "Incident Playbook" Cloudwatch Insights group.
+- Check RDS metrics: CPU, connections, replication lag.
+- Check Kafka consumer lag in Kafka UI.
+
+Step 5 — Mitigate and resolve
+Prefer mitigation over waiting for a full fix. If a feature flag can disable the broken feature, do it. If a rollback can restore service, do it. Document every action taken in the Slack incident channel in real time.
+
+Step 6 — Resolve and communicate
+- Mark incident resolved in PagerDuty.
+- Update status page to "All systems operational."
+- Send an "All Clear" notification to affected customers (template in Notion).
+
+Step 7 — Postmortem
+For every P0 and P1, a postmortem document must be written within 3 business days. Template: Notion → Engineering → Postmortems.
+Sections: Summary, Timeline, Root cause, What went well, What went wrong, Action items (assigned, with due dates).
+Blameless culture: postmortems focus on systems and processes, not individuals.
+
+
+CUSTOMER ESCALATION HANDLING
+
+When a customer escalates directly to leadership (email to CEO, VP, or via an account executive):
+1. Account executive or leader forwards to support@novatech.io with "ESCALATION" in the subject.
+2. Support duty manager acknowledges the escalation within 1 hour during business hours.
+3. Severity is bumped up by one level (P2 becomes P1, P1 becomes P0 escalation track).
+4. Customer Success Manager for that account is looped in immediately.
+5. Weekly update call is scheduled with the customer until resolved.
+
+Churn risk customers (flagged in Salesforce with red health score):
+- Any P2+ ticket from a churn-risk customer is treated as P1 urgency.
+- CSM must be notified of any new ticket from these accounts within 2 hours.
+
+
+COMMON ISSUES AND RESOLUTIONS
+
+Connector sync failures:
+- Check connector logs in the NovaTech dashboard (Settings → Connectors → Logs).
+- Most common cause: credential rotation (customer rotated their API key without updating NovaTech). Fix: customer re-authenticates the connector.
+- Second most common: source database schema change. Fix: customer remaps their schema in NovaTech.
+- If neither: check novatech-ingest service logs in CloudWatch log group /novatech/ingest.
+
+Slow query performance:
+- Check if the affected dataset has a large result set (>1M rows). Recommend adding filters.
+- Check if pgvector index needs rebuilding: `VACUUM ANALYZE data_rag_docs;` in the affected database.
+- Check if the NL-to-SQL model is generating an unoptimized query. Log the generated SQL and review.
+
+Authentication failures:
+- Expired API key: customer should rotate and update their key.
+- IP allowlist blocking requests: customer should update their allowlist or disable it temporarily for testing.
+- SSO misconfiguration: check SAML assertions in the auth logs (Settings → Security → Auth Logs).
+
+Workflow not triggering:
+- Check if the workflow is enabled (common issue: disabled after a failed run).
+- Check trigger configuration — metric thresholds check every 5 minutes; ensure the threshold is actually being crossed.
+- Check workflow run logs for error details.
+- Ensure the service account has permission to read the triggering dataset.
+
+
+COMMUNICATION TEMPLATES
+
+Status page update (incident in progress):
+"We are investigating reports of [issue description]. Our engineering team is actively working on a resolution. We will provide an update in [X] minutes."
+
+Status page update (resolved):
+"This incident has been resolved as of [time]. [Brief description of what was fixed]. We apologize for the disruption and will share a postmortem within 72 hours."
+
+Customer email (P0 notification):
+Subject: [ACTION REQUIRED] NovaTech Service Disruption - [Date]
+"We are writing to inform you of an ongoing issue affecting NovaTech platform availability. [Describe impact]. Our team is working urgently to restore service. We will send updates every 30 minutes until resolved. We apologize for the impact on your business."

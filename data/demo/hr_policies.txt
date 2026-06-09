@@ -1,0 +1,97 @@
+NovaTech People Policies — Employee Handbook
+
+WORK LOCATION & REMOTE POLICY
+
+NovaTech operates as a remote-first company with optional in-office days. All full-time employees are authorized to work from home or any location where they are legally authorized to work in their country of employment.
+
+Office Access:
+NovaTech maintains offices in San Francisco (HQ), New York, London, and Berlin. All employees have keycard access to any NovaTech office. Employees are encouraged, but never required, to come into an office. Offices are staffed Monday through Friday, 9am–6pm local time.
+
+Required In-Person Events:
+- Company-wide All-Hands: twice per year (June and December), attendance strongly encouraged. Company covers travel and accommodation.
+- Team offsites: each team organizes one offsite per year, typically 3–4 days. Attendance is expected unless exceptional circumstances arise. Full travel covered by NovaTech.
+- New employee orientation: first week includes 3 days in-person at the nearest office. This is required.
+
+Home Office Stipend:
+New employees receive a one-time $1,500 home office setup stipend. Receipts must be submitted within 90 days of start date. Annual equipment refresh stipend: $500/year for peripherals, software, and ergonomic improvements. A separate $100/month co-working space allowance is provided for employees who prefer working from a co-working space.
+
+Time Zones:
+There are no hard requirements on working hours, but team members are expected to have at least 4 hours of daily overlap with their team's core hours (listed per team in the People directory). Core hours for most teams: 10am–2pm Pacific / 1pm–5pm Eastern / 6pm–10pm London.
+
+
+TIME OFF & LEAVE
+
+NovaTech offers unlimited Paid Time Off (PTO). "Unlimited" means employees are trusted to take as much time as they need to rest, recharge, and handle personal matters, without a set accrual or cap. There is no payout of unused PTO at separation.
+
+Minimum expectation: To prevent burnout and ensure the policy is genuinely used, NovaTech encourages all employees to take at least 15 business days of PTO per year. Managers track this and will flag if someone is significantly below this threshold. People Ops will reach out proactively if an employee hasn't taken any PTO in 90 days.
+
+How to request PTO:
+Log time off in Rippling (our HRIS). Notify your manager at least 2 business days in advance for 1–3 days off. For 4+ consecutive days, 1 week notice is expected. For extended leave (2+ weeks), 2–4 weeks notice is appreciated to allow workload planning. Your manager should approve in Rippling within 1 business day.
+
+Company Holidays:
+NovaTech observes the following paid holidays regardless of location:
+- New Year's Day (January 1)
+- Memorial Day (US, last Monday of May)
+- Independence Day (US, July 4)
+- Labor Day (US, first Monday of September)
+- Thanksgiving (US, fourth Thursday of November) + day after
+- Christmas Day (December 25)
+Employees in non-US regions observe their country's statutory public holidays in lieu of or in addition to the above, subject to local law.
+
+Parental Leave:
+16 weeks fully paid parental leave for all parents (birth, adoption, or foster placement), regardless of gender or caregiver role. Leave can be taken any time within 12 months of the qualifying event. Extended leave up to 6 months is available at reduced pay (60%) by request; discuss with People Ops.
+
+Sick Leave:
+Sick leave is handled under the unlimited PTO policy. No separate sick day bank. Short-term disability (STD) kicks in after 5 consecutive sick days and covers 60% of salary for up to 12 weeks.
+
+Bereavement Leave:
+5 days fully paid for immediate family (spouse/partner, child, parent, sibling). 3 days for extended family (grandparent, in-law, aunt/uncle). Additional time off can be taken as PTO. NovaTech also provides access to grief counseling via the Employee Assistance Program (EAP).
+
+
+COMPENSATION & BENEFITS
+
+Salary ranges are set by role and level using Radford survey data, targeting the 75th percentile of the market in each employee's location. Salaries are reviewed annually (in January) and adjusted for performance and market movement.
+
+Equity: All full-time employees receive equity (stock options or RSUs depending on role level) with a 4-year vesting schedule and 1-year cliff. Equity details are reviewed at offer time and annually.
+
+Annual Bonus: NovaTech offers an annual performance bonus for all employees. Target bonus is 10–20% of base salary depending on level. Bonuses are tied 50% to company performance (revenue and growth targets) and 50% to individual performance review outcomes.
+
+Health Benefits (US employees):
+- Medical: Choice of PPO or HDHP plans; NovaTech covers 100% of employee premiums and 75% for dependents.
+- Dental: 100% covered for employee; 75% for dependents.
+- Vision: 100% covered for employee and dependents.
+- HSA contribution: $1,200/year for employees enrolled in the HDHP plan.
+
+Non-US employees receive locally competitive benefits packages compliant with local law. Contact People Ops for details specific to your country.
+
+Additional benefits:
+- 401(k) with 4% company match (vests immediately) — US only
+- $3,000/year learning & development budget (courses, books, conferences, certifications)
+- $100/month wellness stipend (gym, meditation apps, therapy)
+- Employee Assistance Program (EAP): free counseling sessions (up to 8/year), legal assistance, financial coaching
+- Calm and Headspace subscriptions provided for all employees
+
+
+PERFORMANCE REVIEWS
+
+NovaTech conducts formal performance reviews twice per year (mid-year in June, year-end in December). The review process includes:
+1. Self-assessment (submitted 2 weeks before manager review)
+2. 360 peer feedback (2–4 peers selected by employee, confirmed by manager)
+3. Manager assessment (using a rubric aligned to the Engineering/Product/GTM career ladders)
+4. Calibration (managers meet to ensure consistency across teams)
+5. Compensation adjustments announced in January following year-end review
+
+Performance ratings: Exceeds Expectations, Meets Expectations, Needs Improvement, Underperforming. Employees rated "Needs Improvement" receive a 90-day Performance Improvement Plan (PIP) with specific goals and check-ins.
+
+Promotion decisions are made during the year-end calibration cycle. Employees must demonstrate sustained performance at the next level for at least one full half-year cycle before promotion is considered.
+
+
+EXPENSES & TRAVEL
+
+Submit expenses in Brex (company card preferred). Expense reports must be filed within 30 days. Receipts required for any expense over $25. Expenses must have a clear business purpose noted. Managers approve expenses in Brex; amounts over $500 require Director approval.
+
+Travel policy:
+- Flights: Economy class for domestic and short-haul international. Business class on flights over 6 hours (with manager pre-approval).
+- Hotels: Up to $250/night in major cities, $200/night elsewhere (exceptions with manager approval).
+- Meals: $75/day per diem when traveling, no receipts required up to this amount.
+- Ground transport: Uber/Lyft preferred; personal car mileage reimbursed at IRS rate.

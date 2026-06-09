@@ -1,0 +1,66 @@
+NovaTech Platform — Product Guide
+
+OVERVIEW
+
+NovaTech is a B2B analytics and workflow automation platform designed for operations, product, and engineering teams. It ingests data from multiple sources, surfaces real-time insights, and allows teams to build automated workflows without writing code. NovaTech processes over 2 billion events per day across 4,000+ customer organizations worldwide.
+
+Core value proposition: replace five disconnected dashboards and two data warehouses with a single source of truth that anyone on your team can query in plain language.
+
+
+CORE FEATURES
+
+Data Ingestion
+NovaTech connects to more than 200 data sources via native connectors. These include cloud databases (PostgreSQL, MySQL, BigQuery, Snowflake, Redshift), SaaS tools (Salesforce, HubSpot, Stripe, Intercom, Zendesk), event streams (Kafka, Kinesis, Segment), and file storage (S3, GCS, SFTP). New connectors ship monthly based on customer demand. Custom connectors can be built using the NovaTech Connector SDK.
+
+AI-Powered Query
+Users can ask questions in plain English against any connected dataset. The underlying engine converts natural language to SQL, executes against the live warehouse, and returns results in seconds. Results can be visualized as tables, charts, or prose summaries. Query history is saved and sharable across the team.
+
+Workflow Automation
+The automation builder lets teams create trigger-based workflows without code. A trigger is any event — a new row in a database, a metric crossing a threshold, a scheduled time, or an API webhook. Actions include sending Slack messages, creating Jira tickets, calling external APIs, updating records in connected databases, and generating PDF reports. Workflows support branching logic and approval steps.
+
+Dashboards & Reports
+Drag-and-drop dashboard builder supports 30+ chart types. Dashboards are shareable via link or embedded in other tools. Scheduled reports deliver PDF or CSV snapshots to email or Slack on a daily, weekly, or monthly cadence. Role-based access controls ensure sensitive dashboards are visible only to authorized team members.
+
+Collaboration
+Every dashboard, query, and workflow has an activity feed and inline commenting. Users can @mention teammates who receive notifications via email or Slack. Version history tracks every change with the ability to revert to any past state. Approval workflows allow designated reviewers to sign off before automated actions execute.
+
+
+PRICING TIERS
+
+Starter — $49 per month (billed annually)
+Designed for small teams getting started with data analysis. Includes: up to 5 users, 3 connected data sources, 5 GB data storage, 10 automated workflows, 10 dashboards, AI query (100 queries/month), standard support (email, 2-business-day response). Best for startups and early-stage teams.
+
+Professional — $199 per month per user (billed annually)
+For growing teams that need deeper integration and higher limits. Includes: unlimited users, 25 connected data sources, 100 GB data storage, 100 automated workflows, unlimited dashboards, AI query (unlimited), real-time data sync (15-minute refresh), priority support (chat + email, 4-hour response), SSO via SAML 2.0. Best for mid-size companies scaling their data practice.
+
+Enterprise — $499 per month (flat rate, billed annually)
+For large organizations with complex security and compliance requirements. Includes: everything in Professional plus unlimited data sources, 5 TB data storage, unlimited workflows and dashboards, real-time data sync (1-minute refresh), dedicated success manager, 24/7 phone and chat support (1-hour SLA), on-premises deployment option, custom data retention policies, SOC 2 Type II and HIPAA compliance packages, custom SLA agreements, and white-label options. Enterprise contracts are negotiated directly with the sales team.
+
+Free Trial: All plans include a 14-day free trial with no credit card required. Trial accounts include Professional-tier features capped at 3 users and 2 data sources.
+
+Add-ons available on any paid plan: Additional data storage ($0.10/GB/month), additional AI query credits ($0.002 per query above plan limit), advanced anomaly detection module ($99/month), custom connector development (priced per scope).
+
+
+INTEGRATIONS
+
+NovaTech offers native two-way integrations with the following tools:
+- Communication: Slack, Microsoft Teams, Email
+- Project management: Jira, Linear, Asana, Monday.com
+- CRM: Salesforce, HubSpot, Pipedrive
+- Support: Zendesk, Intercom, Freshdesk
+- Payments: Stripe, Chargebee, Recurly
+- Engineering: GitHub, GitLab, PagerDuty, Datadog
+- Cloud: AWS, GCP, Azure (all major services)
+- BI tools: Tableau, Looker, Metabase (embed NovaTech views)
+
+All integrations use OAuth 2.0 or API key authentication and follow the principle of least privilege — NovaTech requests only the permissions it needs to perform the integration.
+
+
+SECURITY & COMPLIANCE
+
+Data is encrypted in transit using TLS 1.3 and at rest using AES-256. All encryption keys are managed via AWS KMS with automatic rotation every 90 days. NovaTech is SOC 2 Type II certified (audit reports available on request). HIPAA Business Associate Agreements (BAAs) are available on Enterprise plans. GDPR compliance is built-in: EU customers can elect EU-only data residency with all processing in Frankfurt (eu-central-1). Data deletion requests are honored within 30 days. Annual penetration testing is performed by a third-party security firm; results are shared with Enterprise customers under NDA.
+
+
+SUPPORT
+
+Documentation is available at docs.novatech.io. In-app chat is available Monday–Friday 9am–6pm EST for Professional and Enterprise customers. Enterprise customers have access to a dedicated Customer Success Manager (CSM) who conducts quarterly business reviews and has an on-call escalation path. Status page is at status.novatech.io.

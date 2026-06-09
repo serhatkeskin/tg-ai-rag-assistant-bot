@@ -1,0 +1,131 @@
+NovaTech REST API Reference
+
+BASE URL
+All API endpoints are available at: https://api.novatech.io/v1
+
+API VERSIONING
+The current stable API version is v1. Breaking changes are introduced in new major versions (v2, v3). Deprecated versions are supported for 12 months after a new version is released. Version is specified in the URL path.
+
+
+AUTHENTICATION
+
+NovaTech supports three authentication methods:
+
+1. API Keys (Recommended for server-to-server integrations)
+API keys are long-lived credentials generated in Settings → API Keys. Pass the key in the Authorization header:
+  Authorization: Bearer nt_live_abc123...
+
+Keys can be scoped to specific permissions (read, write, admin) and IP-allowlisted. Keys are never shown again after creation — store them securely. Rotate keys via the dashboard or the key rotation endpoint.
+
+2. OAuth 2.0 (Recommended for user-facing integrations)
+NovaTech supports the Authorization Code flow with PKCE. Register your OAuth application at developers.novatech.io. Scopes available: `data:read`, `data:write`, `workflows:read`, `workflows:write`, `admin`. Access tokens expire after 1 hour; refresh tokens are valid for 30 days.
+
+3. Session Tokens (Browser/web app use only)
+Session tokens are issued on login and stored in an HttpOnly cookie. Not suitable for server-side API calls. Session duration: 8 hours idle timeout, 24 hours absolute.
+
+Rate Limits:
+- Starter: 100 requests/minute, 10,000/day
+- Professional: 1,000 requests/minute, 500,000/day
+- Enterprise: Custom (default 10,000 requests/minute)
+Rate limit headers are returned on every response: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset.
+When a rate limit is exceeded, the API returns HTTP 429 with a Retry-After header.
+
+
+CORE ENDPOINTS
+
+Datasets
+
+GET /v1/datasets
+Returns a paginated list of datasets accessible to the authenticated user.
+Query params: page (int, default 1), per_page (int, default 20, max 100), source (string, filter by connector type), search (string, fuzzy search on name/description).
+Response: { data: Dataset[], meta: { total, page, per_page } }
+
+POST /v1/datasets
+Create a new dataset from a connected source.
+Body: { name: string, source_id: string, query: string (SQL or config), refresh_interval: "realtime" | "hourly" | "daily" | "manual" }
+Response: Dataset object with id, status ("syncing" | "ready" | "error"), created_at.
+
+GET /v1/datasets/{id}
+Returns a single dataset.
+
+DELETE /v1/datasets/{id}
+Deletes a dataset and all associated dashboards and workflows. This action is irreversible.
+
+Queries
+
+POST /v1/query
+Run a natural language query or raw SQL against a dataset.
+Body: { dataset_id: string, query: string, mode: "nl" | "sql" }
+Response: { query_id: string, sql: string (generated SQL if mode is nl), rows: any[][], columns: string[], execution_time_ms: number }
+Note: Large result sets are paginated. Use GET /v1/query/{query_id}/results?page=N to fetch additional pages.
+
+Workflows
+
+GET /v1/workflows
+List all workflows.
+
+POST /v1/workflows
+Create a workflow.
+Body: { name: string, trigger: TriggerConfig, steps: Step[] }
+TriggerConfig types: schedule (cron expression), metric_threshold (dataset_id + condition), webhook (returns webhook URL), dataset_event (new_row | updated_row).
+Step types: send_slack, send_email, create_jira, call_api, update_record, wait (delay in seconds), conditional (branches based on data).
+
+POST /v1/workflows/{id}/run
+Manually trigger a workflow run. Returns run_id.
+
+GET /v1/workflows/{id}/runs
+List recent workflow runs with status and logs.
+
+Connectors
+
+GET /v1/connectors
+List available connector types and their connection schemas.
+
+POST /v1/connectors/connections
+Create a new data source connection.
+Body varies by connector type. Example for PostgreSQL:
+{ type: "postgresql", name: "Prod DB", config: { host: "...", port: 5432, database: "...", user: "...", password: "..." } }
+Passwords and API keys in config are encrypted and never returned in responses.
+
+POST /v1/connectors/connections/{id}/test
+Test a connection. Returns { success: bool, error: string | null, latency_ms: number }.
+
+
+ERROR CODES
+
+All errors follow the format: { error: { code: string, message: string, details?: any } }
+
+HTTP 400 Bad Request — INVALID_PARAMS: Request body or query params are malformed or missing required fields.
+HTTP 401 Unauthorized — INVALID_TOKEN: API key or session token is missing, expired, or revoked.
+HTTP 403 Forbidden — INSUFFICIENT_PERMISSIONS: The authenticated user or key does not have permission for this operation.
+HTTP 404 Not Found — NOT_FOUND: The requested resource does not exist or is not accessible to the caller.
+HTTP 409 Conflict — DUPLICATE: A resource with the same unique identifier already exists.
+HTTP 422 Unprocessable Entity — VALIDATION_ERROR: Semantic validation failed (e.g., invalid SQL, unknown dataset_id).
+HTTP 429 Too Many Requests — RATE_LIMITED: Rate limit exceeded. See Retry-After header.
+HTTP 500 Internal Server Error — INTERNAL_ERROR: Unexpected server error. Contact support with the request_id from the response header (X-Request-ID).
+HTTP 503 Service Unavailable — SERVICE_UNAVAILABLE: Temporary outage. Retry with exponential backoff.
+
+
+SDKs AND CLIENT LIBRARIES
+
+Official SDKs are maintained by NovaTech and published to public package registries:
+- Python: pip install novatech-sdk (PyPI). Supports sync and async (asyncio) clients.
+- Node.js / TypeScript: npm install @novatech/sdk. Full TypeScript types included.
+- Go: go get github.com/novatech/go-sdk.
+- Ruby: gem install novatech.
+
+All SDKs handle authentication, retries with exponential backoff, rate limit handling, and response pagination automatically.
+
+Community SDKs (not officially supported): PHP, Java, Rust — available on the NovaTech GitHub organization.
+
+
+WEBHOOKS
+
+NovaTech can push real-time event notifications to any HTTPS endpoint you control.
+Supported events: dataset.sync_complete, workflow.run_complete, workflow.run_failed, connector.connection_error, billing.invoice_paid, billing.subscription_changed.
+
+Webhook payloads are signed with HMAC-SHA256. The signature is in the X-NovaTech-Signature header. Verify it before processing:
+  expected = HMAC-SHA256(signing_secret, raw_request_body)
+  assert hmac.compare_digest(expected, request.headers["X-NovaTech-Signature"])
+
+Webhook deliveries are retried up to 5 times with exponential backoff on non-2xx responses. Logs of recent deliveries are available in the dashboard.

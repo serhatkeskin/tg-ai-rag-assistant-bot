@@ -1,0 +1,122 @@
+NovaTech Engineering Handbook
+
+WELCOME
+
+This handbook covers everything an engineer needs to go from zero to productive on the NovaTech platform. Read it front-to-back on your first day, then use it as a reference. It is a living document — if something is outdated or missing, open a PR to fix it.
+
+
+LOCAL DEVELOPMENT ENVIRONMENT SETUP
+
+Prerequisites:
+- macOS 13+ or Ubuntu 22.04+. Windows is not supported for local development; use WSL 2 if needed.
+- Docker Desktop 4.20+ or Docker Engine 24+
+- Node.js 20 LTS (use nvm: `nvm install 20 && nvm use 20`)
+- Python 3.11+ (use pyenv: `pyenv install 3.11.9 && pyenv global 3.11.9`)
+- Go 1.21+ (download from go.dev/dl — the team uses Go for high-throughput ingestion services)
+- git 2.40+ and gh CLI (GitHub CLI)
+- AWS CLI v2 configured with dev credentials (ask your onboarding buddy for access)
+- 1Password CLI (op) for secrets management — all secrets are stored in 1Password, never in .env files
+
+Step 1: Clone repositories
+All NovaTech services live in the `novatech-org` GitHub organization. Core repos:
+  - novatech-platform: main monorepo (Next.js frontend, Django API)
+  - novatech-ingest: Go-based event ingestion pipeline
+  - novatech-ml: Python ML services (anomaly detection, NL-to-SQL)
+  - novatech-infra: Terraform, Helm charts, CI/CD configs
+
+Run `gh repo clone novatech-org/novatech-platform` to start.
+
+Step 2: Install dependencies
+From the repo root, run `make install`. This bootstraps all services in the correct order:
+- Installs Python deps in a venv (./venv)
+- Runs `npm install` for the Next.js frontend
+- Pulls Docker images for local infrastructure (Postgres, Redis, Kafka)
+- Runs database migrations
+
+Step 3: Configure secrets
+Run `op run --env-file=.env.template -- make dev` on first launch. The 1Password CLI resolves all secret references and injects them as environment variables. You will need to be logged in (`op signin`). Ask your onboarding buddy for which vault to access.
+
+Step 4: Start services
+Run `make dev`. This starts all services via Docker Compose:
+- API: http://localhost:8000
+- Frontend: http://localhost:3000
+- Adminer (DB UI): http://localhost:8080
+- Kafka UI: http://localhost:8081
+- Redis Commander: http://localhost:8082
+
+Common issues: If ports conflict, check `make ports` to see what's running. If migrations fail, run `make db-reset` (destroys local data) then `make dev` again.
+
+
+CODE STANDARDS
+
+Languages and frameworks:
+- API: Python 3.11, Django 5, Django REST Framework, Celery for async tasks
+- Frontend: TypeScript, Next.js 14 (App Router), Tailwind CSS, shadcn/ui components
+- Ingestion: Go 1.21, standard library + pgx for PostgreSQL, Sarama for Kafka
+- ML services: Python 3.11, FastAPI, PyTorch, LangChain
+- Infrastructure: Terraform, Kubernetes (EKS), Helm, ArgoCD for GitOps
+
+Linting and formatting:
+- Python: ruff (linting + formatting), mypy (strict type checking). Run `make lint-python` before committing.
+- TypeScript: ESLint + Prettier. Run `npm run lint` in the frontend directory.
+- Go: gofmt + golangci-lint. Run `make lint-go`.
+- All repos have pre-commit hooks that run these checks automatically. Never skip hooks.
+
+Testing:
+- Python: pytest with coverage ≥ 80% required for new code. Integration tests use a real test database — no mocking the database layer.
+- TypeScript: Vitest for unit tests, Playwright for E2E tests.
+- Go: standard library testing + testcontainers for integration tests.
+- CI runs all test suites on every PR. PRs cannot be merged with failing tests.
+
+Branching strategy:
+- Main branch: `main`. Protected — direct pushes are blocked.
+- Feature branches: `feat/<jira-ticket>-<short-description>` (e.g., `feat/NT-1234-add-stripe-connector`)
+- Bug fix branches: `fix/<jira-ticket>-<description>`
+- Hotfix branches: `hotfix/<description>` — used for urgent production fixes, bypass normal review process
+
+Commit messages follow Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`. Example: `feat(connectors): add Stripe webhook support`. This is enforced by commitlint in the pre-commit hook.
+
+
+CODE REVIEW PROCESS
+
+All code changes require at least one approving review from a team member who did not write the code. Changes to core infrastructure, security-sensitive code, or the payment flow require two approvals plus a sign-off from the relevant tech lead.
+
+PR description must include:
+1. What changed and why (link to Jira ticket)
+2. How to test the change (step-by-step for reviewers)
+3. Screenshots or recordings for UI changes
+4. Notes on database migrations or schema changes
+
+Reviewers are expected to respond within one business day. If your PR has been waiting more than 24 hours, ping in #engineering-reviews on Slack. Reviewers should focus on correctness, security, performance, and maintainability — not style (handled by linters).
+
+Draft PRs (prefixed with `[WIP]`) are used for early feedback. Mark as ready for review explicitly when done.
+
+
+DEPLOYMENT PIPELINE
+
+NovaTech uses a GitOps deployment model managed by ArgoCD.
+
+Environments:
+- dev: Auto-deployed on every merge to `main`. Used for internal testing. URL: dev.novatech.io.
+- staging: Deployed on every release candidate tag (e.g., `v1.2.0-rc.1`). Used for QA and customer pre-release testing. URL: staging.novatech.io.
+- production: Deployed on every release tag (e.g., `v1.2.0`). Requires two engineers to approve the deploy in the ArgoCD dashboard. URL: app.novatech.io.
+
+To trigger a production deploy:
+1. Merge all changes to `main`.
+2. Create and push a release tag: `git tag v1.2.0 && git push origin v1.2.0`.
+3. The CI pipeline builds a Docker image, tags it, and pushes to ECR.
+4. ArgoCD detects the new image tag and opens a deploy PR in novatech-infra.
+5. Two engineers approve in ArgoCD dashboard. Deploy begins.
+6. Canary rollout: 5% → 25% → 100% over 30 minutes with automatic rollback if error rate spikes.
+
+Database migrations run automatically as a Kubernetes Job before the new pods start. Migrations must be backward-compatible (no column drops in the same release that removes them from code).
+
+
+ON-CALL
+
+Engineers rotate on-call every two weeks. On-call engineers are responsible for:
+- Acknowledging PagerDuty alerts within 15 minutes during business hours, 30 minutes overnight.
+- Triaging incidents per the Incident Response Playbook (see the Support Playbook doc).
+- Writing an incident postmortem for any P0 or P1 incident within 3 business days.
+
+On-call schedule is managed in PagerDuty. Swap requests must be approved in #on-call-swaps Slack channel. Compensation: one extra day PTO per 7-day on-call rotation.
