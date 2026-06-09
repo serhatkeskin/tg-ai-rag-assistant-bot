@@ -1,16 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { getAdminKey } from "@/lib/auth";
 
+// Shows an "Admin" nav link only when an admin key is stored (entered via the
+// token modal). Client-only because it reads localStorage.
 export default function AdminNavLink() {
-  const [show, setShow] = useState(false);
+  const [hasKey, setHasKey] = useState(false);
 
   useEffect(() => {
-    setShow(!!getAdminKey());
+    setHasKey(!!getAdminKey());
+    const sync = () => setHasKey(!!getAdminKey());
+    window.addEventListener("storage", sync);
+    window.addEventListener("admin-key-changed", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("admin-key-changed", sync);
+    };
   }, []);
 
-  if (!show) return null;
-  return <Link href="/secret-admin">Admin</Link>;
+  if (!hasKey) return null;
+  return <a href="/secret-admin">Admin</a>;
 }
