@@ -28,7 +28,7 @@ def setup_llama_settings():
 
 
 def get_vector_store() -> PGVectorStore:
-    return PGVectorStore.from_params(
+    store = PGVectorStore.from_params(
         host=POSTGRES_HOST,
         port=POSTGRES_PORT,
         database=POSTGRES_DB,
@@ -37,6 +37,8 @@ def get_vector_store() -> PGVectorStore:
         table_name=COLLECTION_NAME,
         embed_dim=3072,
     )
+    store._initialize()
+    return store
 
 
 def get_index(vector_store: PGVectorStore | None = None) -> VectorStoreIndex:

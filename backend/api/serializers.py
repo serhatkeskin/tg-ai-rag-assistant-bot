@@ -21,4 +21,12 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class QuerySerializer(serializers.Serializer):
-    query = serializers.CharField(min_length=1, max_length=2000)
+    question = serializers.CharField(min_length=1, max_length=2000, required=False)
+    query = serializers.CharField(min_length=1, max_length=2000, required=False)
+
+    def validate(self, data):
+        question = data.get("question") or data.get("query")
+        if not question:
+            raise serializers.ValidationError("Either 'question' or 'query' field is required.")
+        data["query"] = question
+        return data

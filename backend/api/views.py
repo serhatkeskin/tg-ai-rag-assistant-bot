@@ -272,10 +272,14 @@ def chunks(request):
             )
             rows = cursor.fetchall()
     except Exception as exc:
-        return Response(
-            {"error": f"Could not query chunks: {exc}"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+        err = str(exc)
+        if "does not exist" in err:
+            rows = []
+        else:
+            return Response(
+                {"error": f"Could not query chunks: {exc}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     return Response({
         "count": len(rows),

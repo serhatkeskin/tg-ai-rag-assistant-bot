@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 
 from telegram.ext import (
+    Application,
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
@@ -34,15 +34,32 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 
+_runner = None
 
-async def main() -> None:
+
+async def post_init(application: Application) -> None:
+    global _runner
     storage = get_storage()
     await storage.init()
-
-    runner = await start_health_server()
+    _runner = await start_health_server()
     logger.info("Health server started on :8080")
 
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+async def post_stop(application: Application) -> None:
+    global _runner
+    if _runner:
+        await _runner.cleanup()
+        _runner = None
+
+
+def main() -> None:
+    app = (
+        ApplicationBuilder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .post_stop(post_stop)
+        .build()
+    )
 
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("auth", cmd_auth))
@@ -57,10 +74,8 @@ async def main() -> None:
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
 
     logger.info("Bot polling started")
-    await app.run_polling()
-
-    await runner.cleanup()
+    app.run_polling()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
