@@ -1,0 +1,9 @@
+llama-index>=0.10.0
+llama-index-llms-google-genai
+llama-index-embeddings-google-genai
+llama-index-vector-stores-postgres
+langgraph
+psycopg2-binary
+python-dotenv
+sqlalchemy
+pgvector
