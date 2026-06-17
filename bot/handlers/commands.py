@@ -21,7 +21,7 @@ def get_storage() -> Storage:
 
 
 HELP_TEXT = (
-    "*Aven AI Assistant — Commands*\n\n"
+    "*Sage - Commands*\n\n"
     "/auth `<token>` — Authenticate with your demo token\n"
     "/ask `<question>` — Ask the RAG assistant\n"
     "/clear — Clear conversation history\n"
@@ -60,7 +60,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
     await update.message.reply_text(
-        "Welcome to Aven AI Assistant!\n\n"
+        "Welcome to Sage!\n\n"
         "Send your demo token to get started:\n"
         "`/auth <your-token>`",
         parse_mode="Markdown",
