@@ -5,8 +5,8 @@ import AdminNavLink from "@/components/AdminNavLink";
 
 export const metadata: Metadata = {
   title: {
-    default: "Aven AI",
-    template: "%s | Aven AI",
+    default: "Sage",
+    template: "%s | Sage",
   },
   description: "Telegram RAG assistant powered by LlamaIndex, Gemini, and pgvector.",
 };
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="header-inner">
             <div className="logo">
               <span className="logo-icon">◈</span>
-              <span className="logo-name">Aven AI</span>
+              <span className="logo-name">Sage</span>
               <div className="tech-badges">
                 <span>LlamaIndex</span>
                 <span>Gemini</span>
