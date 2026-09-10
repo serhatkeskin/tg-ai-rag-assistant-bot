@@ -1,11 +1,12 @@
-const BACKEND = "https://rag-api.projects.serhatkeskin.com";
+const DEFAULT_BACKEND = "https://rag-api-production-d85e.up.railway.app";
 
 export async function onRequest(context) {
+  const backend = (context.env && context.env.BACKEND_URL) || DEFAULT_BACKEND;
   const url = new URL(context.request.url);
-  const target = `${BACKEND}${url.pathname}${url.search}`;
+  const target = `${backend}${url.pathname}${url.search}`;
 
   const headers = new Headers(context.request.headers);
-  headers.set("host", "rag-api.projects.serhatkeskin.com");
+  headers.set("host", new URL(backend).host);
 
   const init = { method: context.request.method, headers };
 
