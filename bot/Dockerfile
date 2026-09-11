@@ -9,7 +9,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app/bot
 
-VOLUME /data
+# /data holds the SQLite session store; mount a volume there (compose
+# volume locally, a Railway volume in production). Railway rejects VOLUME.
 
 ENV PYTHONPATH=/app
 
