@@ -4,4 +4,3 @@ rag-explorer-portfolio
 **/__pycache__
 *.pyc
 .env
-bot

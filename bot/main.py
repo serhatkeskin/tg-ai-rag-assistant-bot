@@ -44,8 +44,12 @@ async def post_init(application: Application) -> None:
     global _runner
     storage = get_storage()
     await storage.init()
-    _runner = await start_health_server()
-    logger.info("Health server started on :8080")
+    # Standalone deployments expose /health for the orchestrator. When the bot
+    # runs inside the API container, the API's health check covers it.
+    health_port = os.getenv("BOT_HEALTH_PORT")
+    if health_port:
+        _runner = await start_health_server(port=int(health_port))
+        logger.info("Health server started on :%s", health_port)
 
 
 async def post_stop(application: Application) -> None:

@@ -2,7 +2,8 @@
 
 Token-gated RAG assistant. Documents are embedded with Gemini and stored in
 pgvector; every demo token sees the shared corpus plus only its own uploads.
-The same Django API serves a Next.js web UI and a Telegram bot, both with
+One container serves both channels: the Django API behind the Next.js web UI,
+and a Telegram bot process that calls the same API over loopback. Both keep
 per-user conversation memory.
 
 🔗 **Live demo:** [rag.projects.serhatkeskin.com](https://rag.projects.serhatkeskin.com/)
@@ -44,14 +45,14 @@ document, index it, then ask a question answered *only* from that document.
 | Vector store | PostgreSQL + pgvector (LlamaIndex `PGVectorStore`) |
 | API | Django + Django REST Framework (`backend/`) |
 | Web UI | Next.js static export on Cloudflare Pages (`frontend/`) |
-| Bot | python-telegram-bot, SQLite session store (`bot/`) |
+| Bot | python-telegram-bot, SQLite session store at `/data` (`bot/`) |
 
 ## Project structure
 
 ```
 .
 ├── backend/            # Django API: tokens, documents, chunks, query
-├── bot/                # Telegram bot, talks to the API over HTTP
+├── bot/                # Telegram bot, runs next to the API and calls it over HTTP
 ├── frontend/           # Next.js UI + Pages Function proxying /api/* to the API
 ├── src/
 │   ├── config.py       # env + model config
@@ -59,10 +60,11 @@ document, index it, then ask a question answered *only* from that document.
 │   ├── graph.py        # chat engines, token filters, !general mode
 │   └── main.py         # CLI entry point
 ├── scripts/
+│   ├── start.sh        # container entrypoint: migrate, gunicorn, bot
 │   ├── ingest.py       # index data/ into pgvector
 │   └── seed_demo.py    # load the NovaTech demo corpus
 ├── data/demo/          # default knowledge base
-└── docker-compose.yml  # postgres + backend + bot for local development
+└── docker-compose.yml  # postgres + backend (API and bot) for local development
 ```
 
 ## Local development
@@ -76,7 +78,7 @@ docker compose exec backend python backend/manage.py seed_documents   # shared d
 
 - API: `http://localhost:8000/api/health/`
 - Web UI: `cd frontend && npm install && NEXT_PUBLIC_API_URL=http://localhost:8000/api npm run dev`
-- Bot: `docker compose up -d bot` (needs `TELEGRAM_BOT_TOKEN`)
+- Bot: starts inside `backend` when `TELEGRAM_BOT_TOKEN` is set in `.env`
 - CLI query: `docker compose exec backend python -m src.main "Your question"`
 
 ## Environment
@@ -87,12 +89,14 @@ docker compose exec backend python backend/manage.py seed_documents   # shared d
 | `DJANGO_SECRET_KEY`, `ADMIN_KEY`, `DEBUG` | backend | `ADMIN_KEY` guards token admin |
 | `DATABASE_URL` or `POSTGRES_HOST/PORT/DB/USER/PASSWORD` | backend | database must have the `vector` extension |
 | `TELEGRAM_BOT_TOKEN`, `ADMIN_CHAT_ID` | bot | |
-| `API_BASE_URL` | bot | base URL of the backend, without `/api` |
+| `API_BASE_URL` | bot | base URL of the API without `/api`; defaults to the local gunicorn |
+| `BOT_DB_PATH` | bot | SQLite session store, default `/data/bot.db` (mount a volume) |
+| `BOT_HEALTH_PORT` | bot | optional standalone `/health` port; unset inside the API container |
 | `BACKEND_URL` | Pages Function | overrides the proxy target |
 
 ## Deployment
 
 Pipelines live in a separate private control-plane repository. The API and the
-bot run as two services on Railway next to a shared Postgres; the web UI is a
-Cloudflare Pages project whose Function proxies `/api/*` to the API, so the
-browser only ever talks to one origin.
+bot run as one Railway service (volume at `/data`) next to a shared Postgres;
+the web UI is a Cloudflare Pages project whose Function proxies `/api/*` to the
+API, so the browser only ever talks to one origin.

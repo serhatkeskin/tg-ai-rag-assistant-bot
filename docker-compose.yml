@@ -26,26 +26,16 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-raguser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ragpass}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      # The Telegram bot runs in this container when a token is set.
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-0}
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "8000:8000"
-
-  bot:
-    build:
-      context: bot
-      dockerfile: Dockerfile
-    environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      API_BASE_URL: http://backend:8000
-      ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-0}
-    depends_on:
-      - backend
     volumes:
       - botdata:/data
     ports:
-      - "8080:8080"
+      - "8000:8000"
 
 volumes:
   pgdata:

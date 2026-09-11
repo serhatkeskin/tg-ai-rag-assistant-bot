@@ -6,13 +6,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Install both root RAG deps and Django deps
+# Install the RAG, Django and Telegram bot dependencies
 COPY requirements.txt /app/requirements.txt
 COPY backend/requirements.txt /app/backend/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt -r /app/backend/requirements.txt
+COPY bot/requirements.txt /app/bot/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt -r /app/backend/requirements.txt -r /app/bot/requirements.txt
 
 COPY . .
 
 ENV PYTHONPATH=/app
 
-CMD ["sh", "-c", "cd /app/backend && python manage.py migrate --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120"]
+# API + Telegram bot (the bot starts only when TELEGRAM_BOT_TOKEN is set)
+CMD ["bash", "/app/scripts/start.sh"]

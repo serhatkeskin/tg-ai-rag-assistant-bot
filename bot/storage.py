@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import os
+
 import aiosqlite
 
 
 class Storage:
-    def __init__(self, db_path: str = "/data/bot.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: str | None = None):
+        self.db_path = db_path or os.getenv("BOT_DB_PATH", "/data/bot.db")
 
     async def init(self):
         async with aiosqlite.connect(self.db_path) as db:
