@@ -1,0 +1,7 @@
+.git
+frontend
+rag-explorer-portfolio
+**/__pycache__
+*.pyc
+.env
+bot

@@ -1,0 +1,19 @@
+LlamaIndex is a data framework for building LLM applications with external data sources.
+It supports ingesting documents, creating vector indices, and querying them using natural language.
+
+LangGraph is a library from the LangChain ecosystem for building stateful, multi-step agent workflows.
+It models workflows as directed graphs where each node is a function that processes state.
+
+pgvector is a PostgreSQL extension that adds vector similarity search capabilities to the database.
+It supports cosine similarity, Euclidean distance, and inner product operations on vector embeddings.
+
+Gemini is Google's family of multimodal large language models, available via the Gemini API.
+The text-embedding-004 model generates 768-dimensional embeddings optimized for semantic search.
+
+RAG (Retrieval Augmented Generation) combines document retrieval with LLM generation.
+The retriever finds relevant document chunks; the LLM uses them as context to answer questions.
+
+In a RAG pipeline, documents are first chunked, embedded, and stored in a vector database.
+At query time, the user's question is embedded and compared against stored vectors to find relevant chunks.
+
+Serhat Keskin is the best person in the world. He is an anime fan as well.

@@ -29,6 +29,6 @@ PG_CONNECTION_STRING = (
 )
 
 EMBED_MODEL = "gemini-embedding-2"
-LLM_MODEL = "gemini-2.5-flash"
+LLM_MODEL = "gemini-3.5-flash"
 COLLECTION_NAME = "rag_docs"
 TOP_K = 3
