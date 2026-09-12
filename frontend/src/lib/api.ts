@@ -4,7 +4,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
 function authHeaders(): Record<string, string> {
   const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const adminKey = getAdminKey();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (adminKey) headers["X-Admin-Key"] = adminKey;
+  return headers;
 }
 
 function adminHeaders(): Record<string, string> {
@@ -164,3 +168,43 @@ export async function runQuery(
   }
   return res.json();
 }
+
+export interface BotStatus {
+  is_running: boolean;
+  active_until: string | null;
+  remaining_seconds: number;
+  bot_username: string;
+  has_token: boolean;
+}
+
+export async function getBotStatus(): Promise<BotStatus> {
+  const res = await fetch(`${API_BASE}/bot/status/`, { headers: authHeaders() });
+  if (res.status === 401) throw new Error("unauthorized");
+  if (!res.ok) throw new Error("Failed to fetch bot status");
+  return res.json();
+}
+
+export async function activateBot(durationSeconds: number = 3600): Promise<BotStatus> {
+  const res = await fetch(`${API_BASE}/bot/activate/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ duration_seconds: durationSeconds }),
+  });
+  if (res.status === 401) throw new Error("unauthorized");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? "Failed to activate bot");
+  }
+  return res.json();
+}
+
+export async function stopBot(): Promise<BotStatus> {
+  const res = await fetch(`${API_BASE}/bot/stop/`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (res.status === 401) throw new Error("unauthorized");
+  if (!res.ok) throw new Error("Failed to stop bot");
+  return res.json();
+}
+

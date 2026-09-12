@@ -329,3 +329,34 @@ def query(request):
         "answer": result["answer"],
         "sources": result["sources"],
     })
+
+
+@api_view(["GET"])
+def bot_status(request):
+    from . import bot_service
+    return Response(bot_service.get_bot_status())
+
+
+@api_view(["POST"])
+def bot_activate(request):
+    from . import bot_service
+    duration = request.data.get("duration_seconds", 3600)
+    try:
+        duration = int(duration)
+    except (ValueError, TypeError):
+        return Response(
+            {"error": "duration_seconds must be an integer"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        res = bot_service.activate_bot(duration_seconds=duration)
+        return Response(res)
+    except ValueError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+def bot_stop(request):
+    from . import bot_service
+    return Response(bot_service.stop_bot())
+

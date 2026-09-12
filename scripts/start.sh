@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Container entrypoint: runs the Django API and, when TELEGRAM_BOT_TOKEN is
-# set, the Telegram bot as a second process in the same container. The bot
-# reaches the API over loopback. If either process exits, the container exits
-# with its status so the platform restarts both.
+# Container entrypoint: runs the Django API (Gunicorn) and optionally
+# starts the Telegram bot with an initial active window upon wake-up.
+# The bot automatically stops polling when its active duration expires,
+# allowing Railway to put the inactive container to sleep.
 
 set -euo pipefail
 
@@ -10,18 +10,13 @@ cd /app/backend
 python manage.py migrate --noinput
 
 port="${PORT:-8000}"
-gunicorn core.wsgi:application --bind "0.0.0.0:${port}" --workers 3 --timeout 120 &
+export API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:${port}}"
 
 if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
-  export API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:${port}}"
+  export BOT_ACTIVE_DURATION="${BOT_ACTIVE_DURATION:-3600}"
   (cd /app && python -m bot.main) &
 else
   echo "TELEGRAM_BOT_TOKEN not set; starting the API without the bot"
 fi
 
-trap 'kill $(jobs -p) 2>/dev/null' TERM INT
-set +e
-wait -n
-status=$?
-kill $(jobs -p) 2>/dev/null
-exit "$status"
+exec gunicorn core.wsgi:application --bind "0.0.0.0:${port}" --workers 2 --timeout 120

@@ -18,6 +18,12 @@ class DemoTokenMiddleware:
         ):
             return self.get_response(request)
 
+        admin_key = request.headers.get("X-Admin-Key", "")
+        from django.conf import settings
+        if admin_key and admin_key == getattr(settings, "ADMIN_KEY", None):
+            request.is_admin = True
+            return self.get_response(request)
+
         auth = request.headers.get("Authorization", "")
         raw = auth.removeprefix("Bearer ").strip()
 

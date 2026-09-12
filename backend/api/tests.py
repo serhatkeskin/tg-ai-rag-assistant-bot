@@ -84,3 +84,42 @@ class AdminTokensTest(TestCase):
     def test_admin_key_required(self):
         r = APIClient().get("/api/admin/tokens/")
         self.assertEqual(r.status_code, 403)
+
+
+class BotEndpointsTest(TestCase):
+    def test_bot_endpoints_require_auth(self):
+        client = APIClient()
+        r1 = client.get("/api/bot/status/")
+        self.assertEqual(r1.status_code, 401)
+        r2 = client.post("/api/bot/activate/", {"duration_seconds": 30}, format="json")
+        self.assertEqual(r2.status_code, 401)
+        r3 = client.post("/api/bot/stop/")
+        self.assertEqual(r3.status_code, 401)
+
+    def test_bot_status_with_token(self):
+        tok = make_token("bot-test")
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {tok.token}")
+        r = client.get("/api/bot/status/")
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertIn("is_running", data)
+        self.assertIn("remaining_seconds", data)
+        self.assertIn("bot_username", data)
+
+    def test_bot_status_with_admin_key(self):
+        from django.conf import settings
+        client = APIClient()
+        r = client.get("/api/bot/status/", HTTP_X_ADMIN_KEY=settings.ADMIN_KEY)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertIn("is_running", data)
+
+    def test_bot_stop_with_token(self):
+        tok = make_token("bot-test-stop")
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {tok.token}")
+        r = client.post("/api/bot/stop/")
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(r.json()["is_running"])
+
