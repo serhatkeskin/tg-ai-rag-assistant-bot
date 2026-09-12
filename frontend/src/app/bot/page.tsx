@@ -6,6 +6,7 @@ import { getBotStatus, activateBot, stopBot, type BotStatus } from "@/lib/api";
 
 export default function BotControllerPage() {
   const [isAuth, setIsAuth] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [status, setStatus] = useState<BotStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -21,7 +22,9 @@ export default function BotControllerPage() {
   // Check authentication on mount and on storage events
   useEffect(() => {
     function check() {
-      const auth = Boolean(getToken() || getAdminKey());
+      const admin = Boolean(getAdminKey());
+      const auth = Boolean(getToken() || admin);
+      setIsAdmin(admin);
       setIsAuth(auth);
       if (auth) {
         fetchStatus();
@@ -180,9 +183,11 @@ export default function BotControllerPage() {
     <div style={{ maxWidth: 840, margin: "0 auto" }}>
       {/* Header */}
       <div className="page-header" style={{ marginBottom: 32 }}>
-        <h1>Telegram Bot Controller</h1>
+        <h1>Telegram Bot</h1>
         <p>
-          On-demand polling window designed for Railway Scale-to-Zero ($0 cost during idle).
+          {isAdmin
+            ? "On-demand polling window designed for Railway Scale-to-Zero ($0 cost during idle)."
+            : "Connect with the AI assistant and start an active chat session on Telegram."}
         </p>
       </div>
 
@@ -379,7 +384,9 @@ export default function BotControllerPage() {
             <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>
               {isRunning
                 ? "Bot is actively listening to messages. Polling will stop automatically when expired."
-                : "Polling is off. Service is idle and eligible for Railway zero-cost sleep."}
+                : isAdmin
+                ? "Polling is off. Service is idle and eligible for Railway zero-cost sleep."
+                : "Bot is currently idle. Click activate below to start a chat session."}
             </div>
           </div>
 
@@ -422,8 +429,9 @@ export default function BotControllerPage() {
           Polling Controls
         </h3>
         <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20 }}>
-          Start an active polling session. You can activate for the standard 1-hour window or use
-          small test thresholds to quickly test sleep transitions.
+          {isAdmin
+            ? "Start an active polling session. You can activate for the standard 1-hour window or use small test thresholds to test sleep transitions."
+            : "Activate a 1-hour session to interact with the assistant directly inside Telegram."}
         </p>
 
         {/* Primary Buttons */}
@@ -468,155 +476,159 @@ export default function BotControllerPage() {
           )}
         </div>
 
-        {/* Quick Test Thresholds */}
-        <div
-          style={{
-            padding: "16px 18px",
-            background: "var(--bg)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--r)",
-          }}
-        >
+        {/* Quick Test Thresholds (Admin only) */}
+        {isAdmin && (
           <div
             style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--text2)",
-              marginBottom: 10,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
+              padding: "16px 18px",
+              background: "var(--bg)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r)",
             }}
           >
-            <span>⏱️</span>
-            <span>Quick Threshold Testing (Low Durations):</span>
-          </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              disabled={actionLoading}
-              onClick={() => handleActivate(30)}
+            <div
               style={{
-                background: "var(--bg3)",
-                border: "1px solid var(--border2)",
-                color: "var(--text)",
-                padding: "7px 14px",
-                borderRadius: 6,
                 fontSize: 12,
-                fontFamily: "var(--mono)",
-                cursor: "pointer",
+                fontWeight: 600,
+                color: "var(--text2)",
+                marginBottom: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              Test: 30 Seconds
-            </button>
-
-            <button
-              disabled={actionLoading}
-              onClick={() => handleActivate(120)}
-              style={{
-                background: "var(--bg3)",
-                border: "1px solid var(--border2)",
-                color: "var(--text)",
-                padding: "7px 14px",
-                borderRadius: 6,
-                fontSize: 12,
-                fontFamily: "var(--mono)",
-                cursor: "pointer",
-              }}
-            >
-              Test: 2 Minutes
-            </button>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
-              <input
-                type="number"
-                min="5"
-                max="86400"
-                value={customSec}
-                onChange={(e) => setCustomSec(e.target.value)}
-                placeholder="sec"
-                style={{
-                  width: 70,
-                  background: "var(--bg2)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  padding: "6px 8px",
-                  color: "var(--text)",
-                  fontFamily: "var(--mono)",
-                  fontSize: 12,
-                  textAlign: "center",
-                }}
-              />
-              <span style={{ fontSize: 12, color: "var(--text3)" }}>sec</span>
+              <span>⏱️</span>
+              <span>Quick Threshold Testing (Admin Debug):</span>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <button
-                disabled={actionLoading || !customSec}
-                onClick={() => handleActivate(parseInt(customSec) || 30)}
+                disabled={actionLoading}
+                onClick={() => handleActivate(30)}
                 style={{
                   background: "var(--bg3)",
-                  border: "1px solid var(--border)",
-                  color: "var(--accent)",
-                  padding: "6px 12px",
+                  border: "1px solid var(--border2)",
+                  color: "var(--text)",
+                  padding: "7px 14px",
                   borderRadius: 6,
                   fontSize: 12,
-                  fontWeight: 600,
+                  fontFamily: "var(--mono)",
                   cursor: "pointer",
                 }}
               >
-                Run
+                Test: 30 Seconds
               </button>
+
+              <button
+                disabled={actionLoading}
+                onClick={() => handleActivate(120)}
+                style={{
+                  background: "var(--bg3)",
+                  border: "1px solid var(--border2)",
+                  color: "var(--text)",
+                  padding: "7px 14px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontFamily: "var(--mono)",
+                  cursor: "pointer",
+                }}
+              >
+                Test: 2 Minutes
+              </button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+                <input
+                  type="number"
+                  min="5"
+                  max="86400"
+                  value={customSec}
+                  onChange={(e) => setCustomSec(e.target.value)}
+                  placeholder="sec"
+                  style={{
+                    width: 70,
+                    background: "var(--bg2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    padding: "6px 8px",
+                    color: "var(--text)",
+                    fontFamily: "var(--mono)",
+                    fontSize: 12,
+                    textAlign: "center",
+                  }}
+                />
+                <span style={{ fontSize: 12, color: "var(--text3)" }}>sec</span>
+                <button
+                  disabled={actionLoading || !customSec}
+                  onClick={() => handleActivate(parseInt(customSec) || 30)}
+                  style={{
+                    background: "var(--bg3)",
+                    border: "1px solid var(--border)",
+                    color: "var(--accent)",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Run
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Educational & Architecture Card (Admin only) */}
+      {isAdmin && (
+        <div
+          style={{
+            background: "var(--bg2)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-xl)",
+            padding: 28,
+            marginBottom: 24,
+          }}
+        >
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 14 }}>
+            💡 How Railway Scale-to-Zero Works with Telegram Polling
+          </h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div
+              style={{
+                background: "var(--bg)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r)",
+                padding: 16,
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", marginBottom: 6 }}>
+                1. Auto-Wake on Container Boot
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+                Whenever the container wakes up from an incoming request, the bot is initialized with a
+                1-hour active polling window.
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: "var(--bg)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r)",
+                padding: 16,
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 6 }}>
+                2. Clean Scale-to-Zero
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+                When the active window ends, long-polling gracefully stops. Railway detects zero network
+                traffic and suspends the container ($0/month during sleep).
+              </p>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Educational & Architecture Card */}
-      <div
-        style={{
-          background: "var(--bg2)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-xl)",
-          padding: 28,
-          marginBottom: 24,
-        }}
-      >
-        <h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 14 }}>
-          💡 How Railway Scale-to-Zero Works with Telegram Polling
-        </h4>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              padding: 16,
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", marginBottom: 6 }}>
-              1. Auto-Wake on Container Boot
-            </div>
-            <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
-              Whenever the container wakes up from an incoming request, the bot is initialized with a
-              1-hour active polling window.
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              padding: 16,
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 6 }}>
-              2. Clean Scale-to-Zero
-            </div>
-            <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
-              When the active window ends, long-polling gracefully stops. Railway detects zero network
-              traffic and suspends the container ($0/month during sleep).
-            </p>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Bot Commands Quick Reference */}
       <div
