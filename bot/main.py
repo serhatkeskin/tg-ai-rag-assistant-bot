@@ -36,6 +36,8 @@ from bot.handlers.files import handle_document
 from bot.health import start_health_server
 
 logging.basicConfig(level=logging.INFO)
+# httpx logs every request URL at INFO, and Telegram API URLs embed the bot token.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]

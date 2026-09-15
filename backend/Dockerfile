@@ -16,5 +16,5 @@ COPY . .
 
 ENV PYTHONPATH=/app
 
-# API + Telegram bot (the bot starts only when TELEGRAM_BOT_TOKEN is set)
+# API; the Telegram bot is started on demand from the web UI (/bot)
 CMD ["bash", "/app/scripts/start.sh"]

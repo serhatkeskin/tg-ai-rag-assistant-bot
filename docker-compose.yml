@@ -26,7 +26,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-raguser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ragpass}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
-      # The Telegram bot runs in this container when a token is set.
+      # The Telegram bot runs in this container once activated from /bot.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-0}
     depends_on:

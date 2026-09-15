@@ -602,11 +602,11 @@ export default function BotControllerPage() {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", marginBottom: 6 }}>
-                1. Auto-Wake on Container Boot
+                1. On-Demand Activation
               </div>
               <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
-                Whenever the container wakes up from an incoming request, the bot is initialized with a
-                1-hour active polling window.
+                The bot stays off until it is activated from this page, then polls Telegram for the
+                chosen active window. Waking the container alone does not start it.
               </p>
             </div>
 

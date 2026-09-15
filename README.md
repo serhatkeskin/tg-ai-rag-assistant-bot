@@ -4,7 +4,9 @@ Token-gated RAG assistant. Documents are embedded with Gemini and stored in
 pgvector; every demo token sees the shared corpus plus only its own uploads.
 One container serves both channels: the Django API behind the Next.js web UI,
 and a Telegram bot process that calls the same API over loopback. Both keep
-per-user conversation memory.
+per-user conversation memory. The bot runs on demand: it polls Telegram only
+while activated from the web UI's `/bot` page and stops when its active window
+expires, so an idle container can scale to zero.
 
 🔗 **Live demo:** [rag.projects.serhatkeskin.com](https://rag.projects.serhatkeskin.com/)
 
@@ -60,7 +62,7 @@ document, index it, then ask a question answered *only* from that document.
 │   ├── graph.py        # chat engines, token filters, !general mode
 │   └── main.py         # CLI entry point
 ├── scripts/
-│   ├── start.sh        # container entrypoint: migrate, gunicorn, bot
+│   ├── start.sh        # container entrypoint: migrate, gunicorn
 │   ├── ingest.py       # index data/ into pgvector
 │   └── seed_demo.py    # load the NovaTech demo corpus
 ├── data/demo/          # default knowledge base
@@ -78,7 +80,8 @@ docker compose exec backend python backend/manage.py seed_documents   # shared d
 
 - API: `http://localhost:8000/api/health/`
 - Web UI: `cd frontend && npm install && NEXT_PUBLIC_API_URL=http://localhost:8000/api npm run dev`
-- Bot: starts inside `backend` when `TELEGRAM_BOT_TOKEN` is set in `.env`
+- Bot: runs inside `backend` once activated from the web UI's `/bot` page
+  (needs `TELEGRAM_BOT_TOKEN` in `.env`)
 - CLI query: `docker compose exec backend python -m src.main "Your question"`
 
 ## Environment

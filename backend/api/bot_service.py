@@ -136,12 +136,12 @@ def activate_bot(duration_seconds: int = 3600) -> dict:
         "API_BASE_URL", f"http://127.0.0.1:{os.getenv('PORT', '8000')}"
     )
 
+    # The bot inherits the worker's stdout/stderr so its logs reach the
+    # container log stream.
     proc = subprocess.Popen(
         [sys.executable, "-m", "bot.main"],
         cwd=str(project_root),
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
 
